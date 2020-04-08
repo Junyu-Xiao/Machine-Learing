@@ -33,8 +33,9 @@
 >>
 >><1>　载入数据：
 >>```
+>>##这里以西瓜数据为例
 >>import pandas as pd
->>data = pd.read_csv('./melon.csv')##这里以西瓜数据为例
+>>data = pd.read_csv('./melon.csv')
 >>```
 >>data格式如下(均需为int格式):
 >>|Y|color|...|touch|
@@ -48,13 +49,14 @@
 >>```
 >>import sys
 >>sys.path.append('包存放路径')
->>import BayesNet as BN        ##加载算法库
->>bayesian = BN.Bayes_Net(data)   ##实例化网络
+>>import BayesNet as BN
+>>bayesian = BN.Bayes_Net(data)   
 >>```
 
 >><3>　计算条件互信息矩阵：
->>```
->>cmi_arr = bayesian.CMI_ARR('Y')    ##计算以Y为条件的条件互信息矩阵
+>>```  
+>>##计算以Y为条件的条件互信息矩阵
+>>cmi_arr = bayesian.CMI_ARR('Y')    
 >>```
 >>矩阵形式如下:
 >>|cmi|Y|color|root|...|touch|
@@ -67,10 +69,14 @@
 
 >><4>　以条件互信息作为权重生成最大带权生成树：
 >>```
->>w = bayesian.W_OUT(cmi_arr)    ##将条件互信息作为权重提取出来
+>> ##将条件互信息作为权重提取出来
+>>w = bayesian.W_OUT(cmi_arr)  
+>>
 >>"""代码为生成最大带权生成树提供了两种方法"""
->>tree1 = bayesian.Prim_tree(w)    ##Prim算法生成最大带权生成树
->>tree2 = bayesian.Kruskal_tree(w)    ##Kruskal算法生成最大带权生成树
+>> ##Prim算法生成最大带权生成树
+>>tree1 = bayesian.Prim_tree(w)    
+>> ##Kruskal算法生成最大带权生成树
+>>tree2 = bayesian.Kruskal_tree(w)    
 >>```
 >>最大带权生成树以字典形式储存，形式如下：
 >>```
@@ -81,9 +87,10 @@
 
 >><5>　生成TAN半朴素贝叶斯网络作为初始结构：
 >>```
+>> ##将Y节点作为所有属性节点的父类，Y节点的父类置空
 >>for key in tree1.keys():
->>        tree[key].append('Y')　　   ##将Y节点作为所有属性节点的父类
->>tree['Y'] = []    　　　　　            ##Y节点的父类置空
+>>        tree[key].append('Y')
+>>tree['Y'] = []    　　　　　           
 >>```
 >>TAN网络结构如下：
 >>```
@@ -120,8 +127,9 @@
 >***选择需要预测的节点，按照上文的西瓜数据，需要预测的是Y节点。***
 >>代码实现如下：
 >>```
->>test_feature = data.iloc[:, 1:]             ##用西瓜数据来检验拟合效果
->>pred = BN.Bayes_Predict('./model.pkl', test_feature）　　　　##输入特征
+>> ##调用模型，并用西瓜数据来检验拟合效果
+>>test_feature = data.iloc[:, 1:]             
+>>pred = BN.Bayes_Predict('./model.pkl', test_feature）　　　　
 >>prod = pred.Prob(['Y'])
 >>```
 >>预测的结果为：
