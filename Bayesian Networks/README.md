@@ -19,14 +19,18 @@
 >### **2.1  初始结构**
 >***选择初始结构的方式有很多种，这里选择以TAN半朴素贝叶斯(Tree Augmented naive Bayes)[Friedman et al.,1997]作为初始网络结构。***
 >>**Tan网络结构的生成步骤：**
+>>
 >><1>　计算任意两个属性间的条件互信息；
 >>$$I(x_i,x_j|y)=\sum_{x_i,x_j;c\in y}P(x_i,x_j|c)log\frac {P(x_i,x_j|c)}{P(x_i|c)P(x_i|c)}$$
+>>
 >><2>　以所有属性节点以及节点间的权重构建最大带权生成树，任意两个节点间的权重为$I(x_i,x_j|y)$;
+>>
 >><3>　加入$Y$节点，使其作为所有属性节点的父节点。
 
 >---
 
 >>**对应代码步骤：**
+>>
 >><1>　载入数据：
 >>```
 >>import pandas as pd
@@ -86,7 +90,7 @@
 >>tree1 = {'grain':['Y'],'umbilicus':['grain', 'Y'],'root':['umbilicus', 'Y'], 'sound':['root', 'Y'],'touch':['grain', 'Y'],'color':['grain', 'Y'],'Y':[]} 
 >>```
 >>结构展示如下：
->><div align='center'>![TAN结构](https://wx1.sinaimg.cn/mw690/00872OYVly1gdmgyv7gxgj30fy0cmdgd.jpg)
+>>![TAN结构](https://wx1.sinaimg.cn/mw690/00872OYVly1gdmgyv7gxgj30fy0cmdgd.jpg)
 
 >---
 
