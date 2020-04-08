@@ -1,22 +1,22 @@
-#**代码介绍**
+# **代码介绍**
 >***这是一个贝叶斯算法库，包含三个类，分别为评分函数类、模型训练类以及模型调用类。***
 
 ---
 
-##**1. Net_score（函数评分）**
+## **1. Net_score（函数评分）**
 ***评分函数内置了两个评分函数，BIC以及BCPS函数。***
->###函数公式
+>### 函数公式
 >* BCPS
-$$BCPS(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}\theta_{ijk}-\lambda\sum_{i=1}^{n}q_i(r_i-1)m$$
+>$$BCPS(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}\theta_{ijk}-\lambda\sum_{i=1}^{n}q_i(r_i-1)m$$
 >* BIC
-$$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}})-\lambda\sum_{i=1}^{n}q_i(r_i-1)log(m)$$
+>$$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}})-\lambda\sum_{i=1}^{n}q_i(r_i-1)log(m)$$
 >其中$n$是网络节点数量；$q_i$是节点$i$的父节点组合数量；$r_i$是节点$i$的类别数量；$m_{ij}$是节点$i$的父类组合为时的数据量；$m_{ijk}$是节点$i$的父类组合为$j$时，节点$i$取值为$k$时的数据量；$\theta_{ijk}=m_{ijk}/m_{ij}$为节点$i$的条件概率；$\lambda$是正则项系数。
 
 ---
 
-##**2. Bayes_Net（网络训练）**
+## **2. Bayes_Net（网络训练）**
 ***网络训练包含两大部分：初始结构的生成以及基于现有网络结构的训练。***
->###**2.1  初始结构**
+>### **2.1  初始结构**
 >***选择初始结构的方式有很多种，这里选择以TAN半朴素贝叶斯(Tree Augmented naive Bayes)[Friedman et al.,1997]作为初始网络结构。***
 >>**Tan网络结构的生成步骤：**
 >><1>　计算任意两个属性间的条件互信息；
@@ -70,13 +70,7 @@ $$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}}
 >>```
 >>最大带权生成树以字典形式储存，形式如下：
 >>```
->>tree1 = {'grain':[],
-                 'umbilicus':['grain'],
-                 'root':['umbilicus'],
-                 'sound':['root'],
-                 'touch':['grain'],
-                 'color':['grain'],
-                 'Y':['grain']} 
+>>tree1 = {'grain':[],'umbilicus':['grain'],'root':['umbilicus'],'sound':['root'],'touch':['grain'],'color':['grain'],'Y':['grain']} 
 >>
 >>##属性间的带权生成树本不应该出现Y节点，因为Y与其他节点的权重均为0。但是网络结构中存在Y节点，为了方便之后操作，代码在生成最大带权生成树时会带上Y(计算cmi时的条件节点)
 >>```
@@ -89,20 +83,14 @@ $$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}}
 >>```
 >>TAN网络结构如下：
 >>```
->>tree1 = {'grain':['Y'],
-                 'umbilicus':['grain', 'Y'],
-                 'root':['umbilicus', 'Y'],
-                 'sound':['root', 'Y'],
-                 'touch':['grain', 'Y'],
-                 'color':['grain', 'Y'],
-                 'Y':[]} 
+>>tree1 = {'grain':['Y'],'umbilicus':['grain', 'Y'],'root':['umbilicus', 'Y'], 'sound':['root', 'Y'],'touch':['grain', 'Y'],'color':['grain', 'Y'],'Y':[]} 
 >>```
 >>结构展示如下：
 >><div align='center'>![TAN结构](https://wx1.sinaimg.cn/mw690/00872OYVly1gdmgyv7gxgj30fy0cmdgd.jpg)
 
 >---
 
->###**2.2 结构训练**
+>### **2.2 结构训练**
 >***代码采用的网络结构训练方法为HCNew爬山法，该方法为在网络中随机选择任意两个节点，如果这两个节点之间不存在边，则在这两个节点间生成一条边；如果两个节点之间存在边，则以$p$的概率删除这条边，以１－$p$的概率旋转这条边。结构改变后则计算新结构的评分函数，如果高于原结构的评分，则保留新的结构，否则还原至原来的结构。***
 >>代码实现如下：
 >>```
@@ -111,13 +99,7 @@ $$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}}
 >>```
 >>训练出来的结构为：
 >>```
->>tree1 = {'grain':['Y'],
-                 'umbilicus':['root'],
-                 'root':['sound', 'color', 'touch', 'Y'],
-                 'sound':[],
-                 'touch':[],
-                 'color':[],
-                 'Y':[]} 
+>>tree1 = {'grain':['Y'],'umbilicus':['root'],'root':['sound', 'color', 'touch', 'Y'],'sound':[],'touch':[],'color':[],'Y':[]} 
 >>```
 >>计算得到各个节点的概率表：
 >>```
@@ -128,9 +110,9 @@ $$BIC(S|D)=\sum_{i=1}^n\sum_{j=1}^{q_i}\sum_{k=1}^{r_i}m_{ijk}log({\theta_{ijk}}
 >>bayesian.Save('./model.pkl')
 >>```
 
-##**3. Bayes_Predict（模型调用）**
+## **3. Bayes_Predict（模型调用）**
 ***模型调用主要用于输出需要预测的节点的概率。***
->###**3.1 模型预测**
+>### **3.1 模型预测**
 >***选择需要预测的节点，按照上文的西瓜数据，需要预测的是Y节点。***
 >>代码实现如下：
 >>```
