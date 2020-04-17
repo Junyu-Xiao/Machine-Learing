@@ -1,4 +1,5 @@
 # 仓库介绍
+
 >***这是一个代码仓库, 包含ML、DL、BI等内容, 代码基于Python3编写。***
 
 ***
@@ -15,6 +16,10 @@
 * ## Ensemble Learning
 >包含xgboost/lightgbm/randomforest等集成学习方法，亦包含stacking/blending等模型融合方法，由于数据涉及敏感，均只展示调用方法，具体信息请看Ensemble Learning。
 
+* ## Others
+>内含一些自编的小算法，包含一些数据结构算法、模型评分的优化算法等，不定时更新。
+
 ***
-<p align='right'>Author : Junyu</p>
+<p align='right'>Author : Junyu
+<p align='right'>Date : 2020-04-05
 
