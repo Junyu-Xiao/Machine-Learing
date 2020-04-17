@@ -124,7 +124,7 @@
 >>> 参数$w_{jk}^{(3)}$关于$L$的梯度为：
 >>> 
 >>> $$
->>> \frac {\partial L}{\partial w_{jk}^{(3)}}=\frac {\partial L}{\partial \hat y_k}*\frac {\partial \hat y_k}{\partial z_k^{(3)}}*\frac {\partial z_k^{(3)}}{\partial w_{jk}^{(3)}}\tag{4}
+>>>\frac {\partial L}{\partial w_{jk}^{(3)}}=\frac {\partial L}{\partial \hat y_k}*\frac {\partial \hat y_k}{\partial z_k^{(3)}}*\frac {\partial z_k^{(3)}}{\partial w_{jk}^{(3)}}\tag{4}
 >>> $$
 >>> 
 >>> 所以参数的更新公式是：
@@ -144,7 +144,7 @@
 >>> 所以根据式$(1)、(2)、(3)$将式$(4)$改写为：
 >>> 
 >>> $$
->>> \frac {\partial L}{\partial w_{jk}^{(3)}}=(\hat y_k-y_k)*\hat y_k*(1-\hat y_k)*a_j^{(2)}
+>>>\frac {\partial L}{\partial w_{jk}^{(3)}}=(\hat y_k-y_k)*\hat y_k*(1-\hat y_k)*a_j^{(2)}
 >>> $$
 >>> 
 >>> 参数$w_{jk}^{(3)}$的更新公式为：
