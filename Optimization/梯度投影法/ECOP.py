@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+import itertools as its
 
 class ECOP:
     """
@@ -45,10 +45,10 @@ class ECOP:
             y = f_x(tf_x)
         gradient = tape.gradient(y, tf_x)
         del tape
-        return gradient
+        return gradient.numpy()
 
     @staticmethod
-    def one_search(f_x, x, d, min_, max_, lag):
+    def best_search(f_x, x, d, min_, max_, lag=100):
         """
         :param f_x: 目标函数
         :param x: 当前x
@@ -83,7 +83,8 @@ class ECOP:
         if E is None:
             x = np.zeros([A.shape[1], 1])
         elif E.shape[0] > E.shape[1]:
-            return '等式条件错误：等式条件过多'
+            print('等式条件错误：等式条件过多')
+            return None
         elif E.shape[0] == E.shape[1]:
             if np.abs(np.linalg.det(E)) >= e:
                 inv = np.linalg.inv(E)
@@ -92,7 +93,8 @@ class ECOP:
                 if cond >= 0:
                     return x
                 else:
-                    return '等式条件错误：等式结果无法满足不等式'
+                    print('等式条件错误：等式结果无法满足不等式')
+                    return None
             else:
                 inv = np.linalg.pinv(E)
                 x = np.dot(inv, E_b)
@@ -125,7 +127,8 @@ class ECOP:
             # 可行方向
             d = np.dot(P, np.transpose(current_cond, [1, 0]))
             if np.dot(np.transpose(d, [1, 0]), d).sum() < e:
-                return '条件错误：条件冲突'
+                print('条件错误：条件冲突')
+                return None
 
             # 按投影更新可行点
             while cond < 0:
@@ -154,27 +157,150 @@ class ECOP:
                     else:
                         M = np.vstack(E, new_equal)
                         if M.shape[0] >= M.shape[1]:
-                            return '非行满秩矩阵'
+                            print('非行满秩矩阵')
+                            return None
                     P = self.projection_matrix(M)
                     d = np.dot(P, np.transpose(current_cond, [1, 0]))
                     if np.dot(np.transpose(d, [1, 0]), d).sum() < e:
-                        return '条件错误：条件冲突'
+                        print('条件错误：条件冲突')
+                        return None
 
         return x
 
-    def gradient_projection(self, origin_point=None, e=1e-10):
+    def gradient_projection(self, inside=True, origin_point=None, e=1e-10, lamb_init=1, **kwargs):
         """
         :param origin_point: 初始可行点
         :param e: 误差允许值
         :return: 可行最优解
         """
-        A = self.A
-        A_b = self.A_b
-        E = self.E
-        E_b = self.E_b
-        f_x = self.f_x
+        if inside == True:
+            A = self.A
+            A_b = self.A_b
+            E = self.E
+            f_x = self.f_x
+        else:
+            A = kwargs.get('A')
+            A_b = kwargs.get('A_b')
+            E = kwargs.get('E')
+            f_x = kwargs.get('f_x')
 
         # 若不提供初始点则使用内置方法生成初始点
         if origin_point is None:
-            origin_point = self.point_init(e=e)
+            origin_point = self.point_init(e=1e-10)
 
+        x = origin_point
+
+        status = 0
+        while status == 0:
+
+            # 判断当前可行点是否存在等式条件或处于边界上
+            index_11, index_12 = (np.abs(np.dot(A, x) - A_b) <= 1e-10)[:, 0], (np.abs(np.dot(A, x) - A_b) > 1e-10)[:, 0]
+            A_11, A_12 = A[index_11], A[index_12]
+            A_b_11, A_b_12 = A_b[index_11], A_b[index_12]
+
+            if E is None:
+                if A_11.shape[0] != 0:
+                    M = A_11
+                    M_size = M.shape[0]
+                else:
+                    M_size = 0
+            else:
+                if A_11.shape[0] != 0:
+                    M = np.vstack([A_11, E])
+                    M_size = M.shape[0]
+                else:
+                    M = E
+                    M_size = M.shape[0]
+
+            # 计算等式投影矩阵
+            if M_size == 0:
+                P = np.eye(A.shape[1])
+            else:
+                P = self.projection_matrix(M)
+
+            # 计算梯度方向
+            grad = self.gradient_cul(f_x, x)
+            # 可行方向
+            d = -1 * np.dot(P, grad)
+
+            # 可行方向模长
+            d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
+            # 可行方向判断
+            while (d_l2 <= e) & (status == 0):
+                if (d_l2 <= e) & (M_size == 0):
+                    status = 1
+                elif (d_l2 <= e) & (M_size != 0) & (A_11.shape[0] == 0):
+                    status = 1
+                elif (d_l2 <= e) & (M_size != 0) & (A_11.shape[0] != 0):
+                    if E is not None:
+                        w = np.dot(np.dot(np.linalg.inv(np.dot(M, np.transpose(M, [1, 0]))), M), grad)
+                        u, v = w[:A_11.shape[0]], w[A_11.shape[0]:]
+                        kkt_index = (u >= 0)[:, 0]
+                        if kkt_index.min() == 1:
+                            status = 1
+                        else:
+                            A_11 = A_11[kkt_index]
+                            M = np.vstack([A_11, E])
+                            M_size = M.shape[0]
+                            P = self.projection_matrix(M)
+                            d = -1 * np.dot(P, grad)
+                            d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
+                    else:
+                        w = np.dot(np.dot(np.linalg.inv(np.dot(M, np.transpose(M, [1, 0]))), M), grad)
+                        kkt_index = (w >= 0)[:, 0]
+                        if kkt_index.min() == 1:
+                            status = 1
+                        elif kkt_index.max() == 0:
+                            M_size = 0
+                            P = np.eye(A.shape[1])
+                            d = -1 * np.dot(P, grad)
+                            d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
+                        else:
+                            A_11 = A_11[kkt_index]
+                            M = A_11[:]
+                            M_size = M.shape[0]
+                            P = self.projection_matrix(M)
+                            d = -1 * np.dot(P, grad)
+                            d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
+
+            if d_l2 > e:
+                d_hat = np.dot(A_12, d)
+                b_hat = A_b_12 - np.dot(A_12, x)
+                lamb_index = (d_hat < 0)[:, 0]
+                if lamb_index.max() == 0:
+                    lamb_min = 0
+                    lamb_max = lamb_init
+                else:
+                    d_hat = d_hat[lamb_index]
+                    b_hat = b_hat[lamb_index]
+                    lamb_list = b_hat/d_hat
+                    lamb_min = 0
+                    lamb_max = lamb_list.min()
+                x = self.best_search(f_x, x, d, lamb_min, lamb_max, lag=10)
+
+        return x
+
+    def out_of_int(self, x):
+        A = self.A
+        A_b = self.A_b
+        E = self.E
+
+        if E is not None:
+            print('不支持含有等式条件的转化')
+            return None
+
+        x_int = np.floor(x)
+
+        if ((np.dot(A, x_int) - A_b) >= 0).min() == 1:
+            return x_int
+
+        for i in range(x_int.shape[0]):
+            for item in its.combinations_with_replacement(np.array(range(x_int.shape[0])), i+1):
+                add = np.zeros(x_int.shape)
+                for index in item:
+                    add[index] += 1
+                x_try = x_int + add
+                if ((np.dot(A, x_try) - A_b) >= 0).min() == 1:
+                    return x_try
+
+        return np.ceil(x)
