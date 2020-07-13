@@ -177,7 +177,7 @@ class GPM:
         :param e: 误差允许值
         :return: 可行最优解
         """
-        if inside == True:
+        if inside:
             A = self.A
             A_b = self.A_b
             E = self.E
