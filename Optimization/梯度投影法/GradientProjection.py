@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 import itertools as its
 
-class ECOP:
+
+class GPM:
     """
     梯度投影法：在可行域内求解最优解
     """
@@ -167,8 +168,11 @@ class ECOP:
 
         return x
 
-    def gradient_projection(self, inside=True, origin_point=None, e=1e-10, lamb_init=1, **kwargs):
+    def gradient_projection(self, inside=True, origin_point=None, e=1e-10, lag=10, lr=1, **kwargs):
         """
+        :param lr: 学习率(当梯度方向无限制条件限制时)
+        :param lag:　一维搜索的搜索步长
+        :param inside:　是否使用内置限制条件
         :param origin_point: 初始可行点
         :param e: 误差允许值
         :return: 可行最优解
@@ -225,6 +229,8 @@ class ECOP:
 
             # 可行方向模长
             d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
+            print(d_l2)
+
             # 可行方向判断
             while (d_l2 <= e) & (status == 0):
                 if (d_l2 <= e) & (M_size == 0):
@@ -269,14 +275,14 @@ class ECOP:
                 lamb_index = (d_hat < 0)[:, 0]
                 if lamb_index.max() == 0:
                     lamb_min = 0
-                    lamb_max = lamb_init
+                    lamb_max = lr
                 else:
                     d_hat = d_hat[lamb_index]
                     b_hat = b_hat[lamb_index]
-                    lamb_list = b_hat/d_hat
+                    lamb_list = b_hat / d_hat
                     lamb_min = 0
                     lamb_max = lamb_list.min()
-                x = self.best_search(f_x, x, d, lamb_min, lamb_max, lag=10)
+                x = self.best_search(f_x, x, d, lamb_min, lamb_max, lag=lag)
 
         return x
 
@@ -295,7 +301,7 @@ class ECOP:
             return x_int
 
         for i in range(x_int.shape[0]):
-            for item in its.combinations_with_replacement(np.array(range(x_int.shape[0])), i+1):
+            for item in its.combinations_with_replacement(np.array(range(x_int.shape[0])), i + 1):
                 add = np.zeros(x_int.shape)
                 for index in item:
                     add[index] += 1
