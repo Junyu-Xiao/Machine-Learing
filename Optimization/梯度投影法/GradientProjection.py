@@ -30,7 +30,7 @@ class GPM:
         """
         matrix_T = matrix.T
         I = np.eye(matrix_T.shape[0])
-        Inv = np.linalg.inv(np.dot(matrix, matrix_T))
+        Inv = np.linalg.pinv(np.dot(matrix, matrix_T))
         shadow = I - np.dot(np.dot(matrix_T, Inv), matrix)
         return shadow
 
@@ -88,7 +88,7 @@ class GPM:
             return None
         elif E.shape[0] == E.shape[1]:
             if np.abs(np.linalg.det(E)) >= e:
-                inv = np.linalg.inv(E)
+                inv = np.linalg.pinv(E)
                 x = np.dot(inv, E_b)
                 cond = (np.dot(A, x) - A_b).min()
                 if cond >= 0:
@@ -229,7 +229,6 @@ class GPM:
 
             # 可行方向模长
             d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
-            print(d_l2)
 
             # 可行方向判断
             while (d_l2 <= e) & (status == 0):
@@ -252,7 +251,7 @@ class GPM:
                             d = -1 * np.dot(P, grad)
                             d_l2 = np.dot(np.transpose(d, [1, 0]), d).sum()
                     else:
-                        w = np.dot(np.dot(np.linalg.inv(np.dot(M, np.transpose(M, [1, 0]))), M), grad)
+                        w = np.dot(np.dot(np.linalg.pinv(np.dot(M, np.transpose(M, [1, 0]))), M), grad)
                         kkt_index = (w >= 0)[:, 0]
                         if kkt_index.min() == 1:
                             status = 1
