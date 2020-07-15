@@ -10,7 +10,7 @@ class GPM:
 
     def __init__(self, f_x, A, A_b, E=None, E_b=None):
         """
-        :param f_x: tensorflow运算函数
+        :param f_x: TensorFlow运算函数
         :param A: 不等式约束矩阵
         :param E: 等式约束矩阵
         :param A_b: 不等式约束值
@@ -75,6 +75,7 @@ class GPM:
         初始化可行点
         :return: 初始可行点
         """
+        global b_hat
         A = self.A
         E = self.E
         A_b = self.A_b
@@ -88,7 +89,7 @@ class GPM:
             return None
         elif E.shape[0] == E.shape[1]:
             if np.abs(np.linalg.det(E)) >= e:
-                inv = np.linalg.pinv(E)
+                inv = np.linalg.inv(E)
                 x = np.dot(inv, E_b)
                 cond = (np.dot(A, x) - A_b).min()
                 if cond >= 0:
@@ -108,8 +109,8 @@ class GPM:
             current_cond = A[i: i + 1, :]
             current_b = A_b[i: i + 1, :]
             if i == 0:
-                past_group = np.ones([1, A.shape[1]])
-                past_group_b = np.array([[-99999.]])
+                past_group = None
+                past_group_b = None
             else:
                 past_group = A[:i, :]
                 past_group_b = A_b[:i, :]
@@ -134,8 +135,12 @@ class GPM:
             # 按投影更新可行点
             while cond < 0:
                 lamb_min = (current_b - np.dot(current_cond, x)) / np.dot(current_cond, d)
-                d_hat = np.dot(past_group, d)
-                b_hat = past_group_b - np.dot(past_group, x)
+                if past_group is None:
+                    d_hat = np.array([[1.]])
+                    b_hat = np.array([[1.]])
+                else:
+                    d_hat = np.dot(past_group, d)
+                    b_hat = past_group_b - np.dot(past_group, x)
                 index = d_hat[:, 0] < 0
                 lamb_list = b_hat[index] / d_hat[index]
 
@@ -168,8 +173,9 @@ class GPM:
 
         return x
 
-    def gradient_projection(self, inside=True, origin_point=None, e=1e-10, lag=10, lr=1, **kwargs):
+    def gradient_projection(self, inside=True, origin_point=None, e=1e-10, lag=10, lr=1, epoch=100, **kwargs):
         """
+        :param epoch: 最大迭代次数
         :param lr: 学习率(当梯度方向无限制条件限制时)
         :param lag:　一维搜索的搜索步长
         :param inside:　是否使用内置限制条件
@@ -190,15 +196,16 @@ class GPM:
 
         # 若不提供初始点则使用内置方法生成初始点
         if origin_point is None:
-            origin_point = self.point_init(e=1e-10)
+            origin_point = self.point_init(e=e)
 
         x = origin_point
 
         status = 0
-        while status == 0:
+        step = 0
+        while (status == 0) & (step <= epoch):
 
             # 判断当前可行点是否存在等式条件或处于边界上
-            index_11, index_12 = (np.abs(np.dot(A, x) - A_b) <= 1e-10)[:, 0], (np.abs(np.dot(A, x) - A_b) > 1e-10)[:, 0]
+            index_11, index_12 = (np.abs(np.dot(A, x) - A_b) <= e)[:, 0], (np.abs(np.dot(A, x) - A_b) > e)[:, 0]
             A_11, A_12 = A[index_11], A[index_12]
             A_b_11, A_b_12 = A_b[index_11], A_b[index_12]
 
@@ -282,6 +289,7 @@ class GPM:
                     lamb_min = 0
                     lamb_max = lamb_list.min()
                 x = self.best_search(f_x, x, d, lamb_min, lamb_max, lag=lag)
+            step += 1
 
         return x
 
