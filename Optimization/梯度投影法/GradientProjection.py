@@ -317,3 +317,41 @@ class GPM:
                     return x_try
 
         return np.ceil(x)
+
+
+# 使用实例
+if __name__ == '__main__':
+
+    """
+    A: 不等式矩阵
+    A_b: 不等式偏置项
+    E: 等式矩阵
+    E_b: 等式偏置项
+    f_x: 目标优化函数
+    不等式约束条件: Ax >= A_b
+    等式约束条件: Ex >= E_b
+    输出: 在等式与不等式约束条件下，使得f_x最小的x值
+    """
+    A = np.array([[0., 0., 0., 0., 4., 3.],
+                  [0., 2., 0., 4., 0., 0.],
+                  [0., 0., 3., 0., 0., 0.],
+                  [1., 1., 0., 0., 0., 1.],
+                  [0., 0., 0., 0., 7., 4.],
+                  [0., 3., 0., 6., 0., 0.],
+                  [0., 0., 5., 0., 0., 0.],
+                  [3., 1., 0., 0., 0., 1.]]).astype('float')
+
+    A_b = np.array([[5.],
+                    [2.],
+                    [0.],
+                    [2.],
+                    [15.],
+                    [6.],
+                    [0.],
+                    [0.]]).astype('float')
+    f_x = lambda x: tf.matmul(tf.transpose(x, [1, 0]), x)
+    test = GPM(f_x, A, A_b)
+    best_value = test.gradient_projection(e=1e-3, lag=1000, epoch=100)
+    int_out = test.out_of_int(best_value)
+    print(best_value)
+    print(int_out)
