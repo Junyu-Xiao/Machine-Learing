@@ -89,7 +89,7 @@ class GPM:
             return None
         elif E.shape[0] == E.shape[1]:
             if np.abs(np.linalg.det(E)) >= e:
-                inv = np.linalg.inv(E)
+                inv = np.linalg.pinv(E)
                 x = np.dot(inv, E_b)
                 cond = (np.dot(A, x) - A_b).min()
                 if cond >= 0:
